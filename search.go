@@ -2,6 +2,7 @@ package mexinfo
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -14,6 +15,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	customsearch "google.golang.org/api/customsearch/v1"
+	"google.golang.org/api/option"
 )
 
 const (
@@ -30,9 +34,16 @@ func (e *oldTimeStampError) Error() string {
 	return e.s
 }
 
+// Message is slack message
 type Message struct {
 	ResponseType string `json:"response_type"`
 	Text         string `json:"text"`
+}
+
+// Result is customsearch result
+type Result struct {
+	Position int64
+	Result   *customsearch.Result
 }
 
 // MexSearch brings Mexican information to the Sumo world
@@ -71,7 +82,7 @@ func MexSearch(w http.ResponseWriter, r *http.Request) {
 	query := fmt.Sprintf("%v", r.Form["text"])[0]
 	log.Printf("query %s", string(query))
 
-	msg, err := makeSearchRequest(string(query))
+	msg, err := makeSearchRequest(r.Context(), string(query))
 	if err != nil {
 		log.Fatalf("makeSearchRequest: %v", err)
 	}
@@ -123,8 +134,25 @@ func verifyWebHook(r *http.Request) (bool, error) {
 	return hmac.Equal(signature, signatureInHeader), nil
 }
 
-func makeSearchRequest(query string) (*Message, error) {
-	return formatSlackMessage(query)
+func makeSearchRequest(ctx context.Context, query string) (*Message, error) {
+	apiKey := os.Getenv("SEARCH_API_KEY")
+	id := os.Getenv("SEARCH_ID")
+	q := "メキシコ " + query
+
+	customsearchService, err := customsearch.NewService(ctx, option.WithAPIKey(apiKey))
+	search := customsearchService.Cse.List(q)
+	search.Cx(id)
+
+	search.Start(1)
+	call, err := search.Do()
+	if err != nil {
+		return nil, err
+	}
+	if len(call.Items) == 0 {
+		return nil, fmt.Errorf("not found")
+	}
+
+	return formatSlackMessage(call.Items[0].Link)
 }
 
 func getSignature(base []byte, secret []byte) []byte {
