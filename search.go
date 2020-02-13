@@ -69,6 +69,8 @@ func MexSearch(w http.ResponseWriter, r *http.Request) {
 
 	// todo: search
 	query := fmt.Sprintf("%v", r.Form["text"])[0]
+	log.Printf("query %s", string(query))
+
 	msg, err := makeSearchRequest(string(query))
 	if err != nil {
 		log.Fatalf("makeSearchRequest: %v", err)
@@ -78,6 +80,7 @@ func MexSearch(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(msg); err != nil {
 		log.Fatalf("json.Marshal: %v", err)
 	}
+	log.Printf("send message %v", msg)
 }
 
 func verifyWebHook(r *http.Request) (bool, error) {
