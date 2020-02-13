@@ -38,6 +38,7 @@ func (e *oldTimeStampError) Error() string {
 type Message struct {
 	ResponseType string `json:"response_type"`
 	Text         string `json:"text"`
+	UnfurlLinks  bool   `json:"unfurl_links"`
 }
 
 // Result is customsearch result
