@@ -1,0 +1,10 @@
+steps:
+- name: 'gcr.io/cloud-builders/gcloud'
+  args: [
+    'functions',
+    'deploy',
+    'MexSearch',
+    '--runtime',
+    'go113',
+    '--trigger-http',
+  ]
