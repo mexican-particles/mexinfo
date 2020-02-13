@@ -30,6 +30,11 @@ func (e *oldTimeStampError) Error() string {
 	return e.s
 }
 
+type Message struct {
+	ResponseType string `json:"response_type"`
+	Text         string `json:"text"`
+}
+
 // MexSearch brings Mexican information to the Sumo world
 func MexSearch(w http.ResponseWriter, r *http.Request) {
 	setup(r.Context())
@@ -63,10 +68,14 @@ func MexSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// todo: search
-	text := fmt.Sprintf("%v", r.Form["text"])
+	query := fmt.Sprintf("%v", r.Form["text"])[0]
+	msg, err := makeSearchRequest(string(query))
+	if err != nil {
+		log.Fatalf("makeSearchRequest: %v", err)
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(text); err != nil {
+	if err := json.NewEncoder(w).Encode(msg); err != nil {
 		log.Fatalf("json.Marshal: %v", err)
 	}
 }
@@ -109,6 +118,10 @@ func verifyWebHook(r *http.Request) (bool, error) {
 	}
 
 	return hmac.Equal(signature, signatureInHeader), nil
+}
+
+func makeSearchRequest(query string) (*Message, error) {
+	return formatSlackMessage(query)
 }
 
 func getSignature(base []byte, secret []byte) []byte {
