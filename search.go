@@ -79,10 +79,10 @@ func MexSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// todo: search
-	query := fmt.Sprintf("%v", r.Form["text"])[0]
-	log.Printf("query %s", string(query))
+	query := strings.Join(r.Form["text"], " ")
+	log.Printf("query %s", query)
 
-	msg, err := makeSearchRequest(r.Context(), string(query))
+	msg, err := makeSearchRequest(r.Context(), query)
 	if err != nil {
 		log.Fatalf("makeSearchRequest: %v", err)
 	}
